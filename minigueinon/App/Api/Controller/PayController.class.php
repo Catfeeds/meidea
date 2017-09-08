@@ -144,12 +144,25 @@ class PayController extends PublicController{
             	//处理优惠券
             	$vid=$order->where('order_sn="'.trim($arr['out_trade_no']).'"')->getField("vid");
             	$uid=$order->where('order_sn="'.trim($arr['out_trade_no']).'"')->getField("uid");
-				if (intval($vid)) {
-					$vou_info = M('user_voucher')->where('uid='.intval($uid).' AND vid='.intval($vid))->find();
-					if (intval($vou_info['status'])==1) {
-						M('user_voucher')->where('id='.intval($vou_info['id']))->save(array('status'=>2));
-					}
-				}
+		if (intval($vid)) {
+			$vou_info = M('user_voucher')->where('uid='.intval($uid).' AND vid='.intval($vid))->find();
+			if (intval($vou_info['status'])==1) {
+				M('user_voucher')->where('id='.intval($vou_info['id']))->save(array('status'=>2));
+			}
+		}
+		//赠送积分
+		$oid = M('order')->where('order_sn="'.trim($arr['out_trade_no']).'"')->getField('id');
+		$uid = M('order')->where('order_sn="'.trim($arr['out_trade_no']).'"')->getField('uid');
+		$pro = M('order_product')->where('order_id='.intval($oid))->select();
+		$num = 0;
+		foreach ($pro as $k => $v) {
+			$num += M('product')->where('id='.intval($v['pid']))->getField('price_jf');
+		}
+		if($num>0){
+			$jifen_tmp = M('user')->where('id='.intval($uid))->getField('jifen');
+			$temp['jifen'] = intval($jifen_tmp)+intval($num);
+			M('user')->where('id='.intval($uid))->save($temp);
+		}
             	//返回xml格式的通知回去
             	$return = array('return_code'=>'SUCCESS','return_msg'=>'OK');
 		        $re_xml = '<xml>';
